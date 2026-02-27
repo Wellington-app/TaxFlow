@@ -9,7 +9,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
       - name: Set up Node.js 22
         uses: actions/setup-node@v4
@@ -31,7 +32,7 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
-      - name: Setup Capacitor
+      - name: Setup Capacitor Android
         run: |
           npx cap add android || true
           npx cap sync android
@@ -43,14 +44,14 @@ jobs:
           ./gradlew assembleDebug
           ./gradlew bundleRelease
 
-      - name: Upload APK
+      - name: Upload APK (Para Teste)
         uses: actions/upload-artifact@v4
         with:
           name: app-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: android/app/build/outputs/apk/debug/*.apk
 
-      - name: Upload App Bundle (AAB)
+      - name: Upload App Bundle (Para Play Store)
         uses: actions/upload-artifact@v4
         with:
           name: app-release-bundle
-          path: android/app/build/outputs/bundle/release/app-release.bundle.aab
+          path: android/app/build/outputs/bundle/release/*.aab
