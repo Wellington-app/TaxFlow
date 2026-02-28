@@ -32,16 +32,19 @@
           document.getElementById('debug-info').innerHTML = 'Módulos carregados, iniciando interface...';
         });
 
-        // Sinal de vida para o React
-        window.markAppAsLoaded = function() {
-          console.log('App carregado com sucesso');
+        // Função para esconder a tela de carregamento
+        window.hideLoadingScreen = function() {
+          var root = document.getElementById('root');
+          // Remove o conteúdo de carregamento mas mantém a div root
+          root.innerHTML = ''; 
+          console.log('Interface React assumiu o controle');
         };
       </script>
       <style>
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
       </style>
     </div>
-    <script type="module" src="/src/main.tsx"></script>
+    <script type="module" src="./src/main.tsx"></script>
   </body>
 </html>
 
