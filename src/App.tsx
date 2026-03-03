@@ -37,6 +37,8 @@ import {
 import Markdown from 'react-markdown';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 import { supabase } from './lib/supabase';
 import { Auth } from './components/Auth';
 import { simulateTaxes } from './services/taxLogic';
@@ -267,7 +269,35 @@ export default function App() {
     doc.setTextColor(16, 185, 129); // Emerald color
     doc.text(`Recomendação: O regime mais econômico é o ${best.regime}.`, 14, (doc as any).lastAutoTable.finalY + 15);
     
-    doc.save('relatorio-contabil-facil.pdf');
+    const fileName = 'relatorio-taxflow.pdf';
+
+    // Lógica para Celular vs Web
+    const savePDF = async () => {
+      if (typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform()) {
+        try {
+          const pdfBase64 = doc.output('datauristring').split(',')[1];
+          const savedFile = await Filesystem.writeFile({
+            path: fileName,
+            data: pdfBase64,
+            directory: Directory.Cache
+          });
+
+          await Share.share({
+            title: 'Relatório TaxFlow',
+            text: 'Confira seu planejamento tributário gerado pelo TaxFlow.',
+            url: savedFile.uri,
+            dialogTitle: 'Compartilhar Relatório'
+          });
+        } catch (e) {
+          console.error('Erro ao compartilhar PDF no celular', e);
+          alert('Não foi possível gerar o PDF no celular.');
+        }
+      } else {
+        doc.save(fileName);
+      }
+    };
+
+    savePDF();
   };
 
   useEffect(() => {
@@ -727,7 +757,11 @@ export default function App() {
             <p className="text-sm text-indigo-100">
               Você tem R$ 2.800 em gastos com consumíveis este mês. Sabia que no Lucro Real isso poderia reduzir seu imposto em até R$ 952?
             </p>
-            <Button variant="ghost" className="mt-4 text-white hover:bg-indigo-500 w-full border border-indigo-400">
+            <Button 
+              variant="ghost" 
+              className="mt-4 text-white hover:bg-indigo-500 w-full border border-indigo-400"
+              onClick={() => setActiveTab('simulator')}
+            >
               Ver Detalhes
             </Button>
           </Card>
