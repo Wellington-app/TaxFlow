@@ -48,11 +48,14 @@ import { cn } from './lib/utils';
 
 // --- Components ---
 
-const Card = ({ children, className }: { children: React.ReactNode; className?: string }) => (
-  <div className={cn("bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden", className)}>
-    {children}
-  </div>
+const Card = React.forwardRef<HTMLDivElement, { children: React.ReactNode; className?: string }>(
+  ({ children, className }, ref) => (
+    <div ref={ref} className={cn("bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden", className)}>
+      {children}
+    </div>
+  )
 );
+Card.displayName = 'Card';
 
 const Button = ({ 
   children, 
@@ -93,16 +96,18 @@ const Button = ({
 
 export default function App() {
   const [session, setSession] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'simulator' | 'education' | 'cashflow' | 'alerts'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'simulator' | 'education' | 'cashflow' | 'alerts' | 'settings'>('dashboard');
   const [businessData, setBusinessData] = useState<BusinessData>({
     monthlyRevenue: 50000,
     monthlyExpenses: 15000,
     employeeCosts: 10000,
     machineRental: 2000,
     consumables: 1500,
-    activityType: 'service',
+    activityType: 'service_general',
     issRate: 5
   });
+  const adviceRef = React.useRef<HTMLDivElement>(null);
+
   const [simulationResults, setSimulationResults] = useState<TaxSimulationResult[]>([]);
   const [advice, setAdvice] = useState<string>('');
   const [loadingAdvice, setLoadingAdvice] = useState(false);
@@ -314,9 +319,14 @@ export default function App() {
 
   const handleGetAdvice = async (topic: string) => {
     setLoadingAdvice(true);
+    setAdvice('');
     try {
-      const res = await getFinancialAdvice(`Explique sobre ${topic} para um empreendedor iniciante no Brasil.`);
+      const res = await getFinancialAdvice(`Explique detalhadamente sobre ${topic} para um empreendedor iniciante no Brasil. Use exemplos práticos e linguagem simples.`);
       setAdvice(res || '');
+      // Scroll to advice after a short delay to allow rendering
+      setTimeout(() => {
+        adviceRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
     } catch (e) {
       setAdvice('Erro ao obter conselhos. Tente novamente.');
     }
@@ -505,6 +515,20 @@ export default function App() {
         <h3 className="text-xl font-bold text-slate-900">Dados do Negócio</h3>
         <div className="space-y-4">
           <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Ramo de Atividade</label>
+            <select 
+              value={businessData.activityType}
+              onChange={(e) => setBusinessData({...businessData, activityType: e.target.value as any})}
+              className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
+            >
+              <option value="service_general">Prestação de Serviços (Geral)</option>
+              <option value="service_professional">Serviços Profissionais (Advogados, Médicos, etc.)</option>
+              <option value="commerce">Comércio</option>
+              <option value="industry">Indústria</option>
+              <option value="transport">Transporte</option>
+            </select>
+          </div>
+          <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Receita Bruta Mensal (R$)</label>
             <input 
               type="number" 
@@ -646,13 +670,15 @@ export default function App() {
       </div>
 
       {loadingAdvice ? (
-        <Card className="p-12 text-center">
+        <Card className="p-12 text-center" ref={adviceRef}>
           <div className="animate-spin w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full mx-auto mb-4" />
           <p className="text-slate-600">Consultando especialista IA...</p>
         </Card>
       ) : advice ? (
-        <Card className="p-8 prose prose-slate max-w-none">
-          <Markdown>{advice}</Markdown>
+        <Card className="p-8 prose prose-slate max-w-none" ref={adviceRef}>
+          <div className="markdown-body">
+            <Markdown>{advice}</Markdown>
+          </div>
         </Card>
       ) : (
         <Card className="p-12 text-center bg-slate-50 border-dashed">
@@ -770,6 +796,128 @@ export default function App() {
     </div>
   );
 
+  const [generatingIcon, setGeneratingIcon] = useState(false);
+  const [generatedIconUrl, setGeneratedIconUrl] = useState<string | null>(null);
+
+  const handleGenerateHighResIcon = async () => {
+    setGeneratingIcon(true);
+    try {
+      const { GoogleGenAI } = await import("@google/genai");
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.1-flash-image-preview',
+        contents: {
+          parts: [
+            {
+              text: "A professional and modern app icon for a financial and tax planning app called 'TaxFlow'. The icon should feature a clean, minimalist design with a stylized growth chart or a simple geometric representation of a calculator/ledger. Use a professional color palette of deep indigo (#4F46E5) and vibrant emerald (#10B981). The design should be flat, centered on a solid background, with no text. High quality, 1024x1024 resolution, centered, app icon style.",
+            },
+          ],
+        },
+        config: {
+          imageConfig: {
+            aspectRatio: "1:1",
+            imageSize: "1K"
+          }
+        },
+      });
+
+      for (const part of response.candidates[0].content.parts) {
+        if (part.inlineData) {
+          setGeneratedIconUrl(`data:image/png;base64,${part.inlineData.data}`);
+          break;
+        }
+      }
+    } catch (e) {
+      console.error("Error generating icon", e);
+      alert("Erro ao gerar ícone em alta resolução.");
+    }
+    setGeneratingIcon(false);
+  };
+
+  const renderSettings = () => (
+    <div className="max-w-2xl mx-auto space-y-8">
+      <Card className="p-8">
+        <h3 className="text-xl font-bold mb-6">Identidade Visual</h3>
+        <div className="flex flex-col md:flex-row gap-8 items-center">
+          <div className="w-48 h-48 bg-white rounded-3xl shadow-2xl border border-slate-100 flex items-center justify-center overflow-hidden p-4">
+            <img src="/icon.svg" alt="App Icon" className="w-full h-full object-contain" />
+          </div>
+          <div className="flex-1 space-y-4 text-center md:text-left">
+            <div>
+              <h4 className="font-bold text-slate-900">Ícone do Aplicativo (SVG)</h4>
+              <p className="text-sm text-slate-500">Este é o ícone vetorial oficial. Ideal para uso em qualquer tamanho sem perder qualidade.</p>
+            </div>
+            <div className="flex flex-wrap gap-3 justify-center md:justify-start">
+              <a 
+                href="/icon.svg" 
+                download="taxflow-icon.svg"
+                className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-all flex items-center gap-2"
+              >
+                Download SVG
+              </a>
+              <Button variant="outline" onClick={handleGenerateHighResIcon} disabled={generatingIcon}>
+                {generatingIcon ? 'Gerando...' : 'Gerar Versão 1024px (PNG)'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {generatedIconUrl && (
+        <Card className="p-8 border-indigo-200 bg-indigo-50/30">
+          <h3 className="text-xl font-bold mb-4 text-indigo-900">Versão em Alta Resolução (1024x1024)</h3>
+          <p className="text-sm text-indigo-700 mb-6">Aqui está uma versão gerada por IA em alta definição para você tirar seu print ou salvar.</p>
+          <div className="flex flex-col items-center gap-6">
+            <div className="w-64 h-64 rounded-[48px] shadow-2xl overflow-hidden border-4 border-white">
+              <img src={generatedIconUrl} alt="Generated High Res Icon" className="w-full h-full object-cover" />
+            </div>
+            <a 
+              href={generatedIconUrl} 
+              download="taxflow-high-res.png"
+              className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all"
+            >
+              Baixar PNG em Alta Resolução
+            </a>
+          </div>
+        </Card>
+      )}
+
+      <Card className="p-8">
+        <h3 className="text-xl font-bold mb-4">Informações do Sistema</h3>
+        <div className="space-y-4">
+          <div className="flex justify-between py-3 border-b border-slate-100">
+            <span className="text-slate-500">Nome do App</span>
+            <span className="font-bold">TaxFlow</span>
+          </div>
+          <div className="flex justify-between py-3 border-b border-slate-100">
+            <span className="text-slate-500">Versão</span>
+            <span className="font-bold">1.0.0 (Beta)</span>
+          </div>
+          <div className="flex justify-between py-3 border-b border-slate-100">
+            <span className="text-slate-500">Links Legais</span>
+            <div className="flex gap-3">
+              <a href="/privacy.html" target="_blank" className="text-indigo-600 hover:underline text-sm font-medium">Privacidade</a>
+              <a href="/delete-account.html" target="_blank" className="text-indigo-600 hover:underline text-sm font-medium">Excluir Dados</a>
+            </div>
+          </div>
+          <div className="flex justify-between py-3">
+            <span className="text-slate-500">Ambiente</span>
+            <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-xs font-bold uppercase">Produção</span>
+          </div>
+        </div>
+      </Card>
+
+      <div className="flex justify-center">
+        <button 
+          onClick={() => supabase.auth.signOut()}
+          className="text-rose-600 font-bold hover:underline"
+        >
+          Sair da Conta
+        </button>
+      </div>
+    </div>
+  );
+
   if (!session) {
     return <Auth />;
   }
@@ -792,6 +940,7 @@ export default function App() {
             { id: 'cashflow', icon: Wallet, label: 'Fluxo de Caixa' },
             { id: 'education', icon: BookOpen, label: 'Educação' },
             { id: 'alerts', icon: Bell, label: 'Alertas' },
+            { id: 'settings', icon: Info, label: 'Configurações' },
           ].map((item) => (
             <button
               key={item.id}
@@ -828,6 +977,7 @@ export default function App() {
           { id: 'cashflow', icon: Wallet },
           { id: 'education', icon: BookOpen },
           { id: 'alerts', icon: Bell },
+          { id: 'settings', icon: Info },
         ].map((item) => (
           <button
             key={item.id}
@@ -852,6 +1002,7 @@ export default function App() {
               {activeTab === 'education' && 'Central de Conhecimento'}
               {activeTab === 'cashflow' && 'Gestão de Fluxo de Caixa'}
               {activeTab === 'alerts' && 'Alertas e Oportunidades'}
+              {activeTab === 'settings' && 'Configurações da Marca'}
             </h2>
             <p className="text-slate-500 text-sm">Hoje é {new Date().toLocaleDateString('pt-BR')}</p>
           </div>
@@ -888,6 +1039,7 @@ export default function App() {
             {activeTab === 'simulator' && renderSimulator()}
             {activeTab === 'education' && renderEducation()}
             {activeTab === 'cashflow' && renderCashflow()}
+            {activeTab === 'settings' && renderSettings()}
             {activeTab === 'alerts' && (
               <div className="max-w-3xl mx-auto">
                 <h3 className="text-xl font-bold mb-6">Alertas do Sistema</h3>

@@ -28,12 +28,19 @@ export interface TaxSimulationResult {
 
 export type TaxRegime = 'Simples Nacional' | 'Lucro Presumido' | 'Lucro Real';
 
+export type BusinessActivity = 
+  | 'service_general' 
+  | 'service_professional' 
+  | 'commerce' 
+  | 'industry' 
+  | 'transport';
+
 export interface BusinessData {
   monthlyRevenue: number;
   monthlyExpenses: number;
   employeeCosts: number;
   machineRental: number;
   consumables: number;
-  activityType: 'service' | 'commerce';
+  activityType: BusinessActivity;
   issRate: number;
 }

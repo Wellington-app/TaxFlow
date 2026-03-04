@@ -1,5 +1,5 @@
 {
-  "name": "TaxFlow - Gestão Tributária",
+  "name": "TaxFlow",
   "short_name": "TaxFlow",
   "description": "Gestão e planejamento tributário inteligente para microempresas.",
   "start_url": "/",
@@ -8,13 +8,18 @@
   "theme_color": "#4F46E5",
   "icons": [
     {
-      "src": "https://api.dicebear.com/7.x/initials/png?seed=TF&backgroundColor=4f46e5&fontSize=50",
-      "sizes": "192x192",
-      "type": "image/png",
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
       "purpose": "any maskable"
     },
     {
-      "src": "https://api.dicebear.com/7.x/initials/png?seed=TF&backgroundColor=4f46e5&fontSize=50",
+      "src": "https://api.dicebear.com/7.x/shapes/png?seed=TaxFlow&backgroundColor=4f46e5",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://api.dicebear.com/7.x/shapes/png?seed=TaxFlow&backgroundColor=4f46e5",
       "sizes": "512x512",
       "type": "image/png"
     }

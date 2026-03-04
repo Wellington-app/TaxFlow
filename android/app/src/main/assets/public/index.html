@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <link rel="manifest" href="./manifest.json" />
+    <link rel="icon" type="image/svg+xml" href="./icon.svg" />
+    <meta name="theme-color" content="#4F46E5" />
+    <title>Contábil Fácil - Gestão Tributária</title>
+    <script type="module" crossorigin src="./assets/index-Bi-TKfD3.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-ChPN3y4y.css">
+  </head>
+  <body>
+    <div id="root">
+      <div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; background: #F8FAFC;">
+        <div style="text-align: center;">
+          <div style="width: 40px; height: 40px; border: 4px solid #e0e7ff; border-top: 4px solid #6366f1; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px;"></div>
+          <p style="font-weight: 600; color: #6366f1;">Contábil Fácil</p>
+          <p id="status" style="font-size: 12px; color: #94a3b8; margin-top: 8px;">Iniciando...</p>
+        </div>
+      </div>
+    </div>
+    <script>
+      window.onerror = function(m, u, l) {
+        var s = document.getElementById('status');
+        if (s) s.innerHTML = '<span style="color:red">Erro: ' + m + '</span>';
+      };
+      document.addEventListener('DOMContentLoaded', function() {
+        var s = document.getElementById('status');
+        if (s) s.innerHTML = 'Carregando módulos...';
+      });
+    </script>
+    <style>
+      @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+  </body>
+</html>
+

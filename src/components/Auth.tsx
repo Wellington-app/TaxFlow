@@ -94,13 +94,19 @@ export const Auth = () => {
           </button>
         </form>
 
-        <div className="mt-6 text-center">
+        <div className="mt-6 text-center space-y-4">
           <button 
             onClick={() => setIsSignUp(!isSignUp)}
-            className="text-sm text-indigo-600 font-medium hover:underline"
+            className="text-sm text-indigo-600 font-medium hover:underline block w-full"
           >
             {isSignUp ? 'Já tem uma conta? Entre aqui' : 'Não tem uma conta? Cadastre-se'}
           </button>
+          
+          <div className="pt-4 border-t border-slate-100 flex justify-center gap-4 text-xs text-slate-400">
+            <a href="/privacy.html" target="_blank" className="hover:text-indigo-600 transition-colors">Política de Privacidade</a>
+            <span>•</span>
+            <a href="/delete-account.html" target="_blank" className="hover:text-indigo-600 transition-colors">Excluir Conta</a>
+          </div>
         </div>
       </motion.div>
     </div>
