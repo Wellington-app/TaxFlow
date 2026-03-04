@@ -1,16 +1,31 @@
-name: Build TaxFlow APK
-on: [push, workflow_dispatch]
+name: Build TaxFlow AAB
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 22 }
-      - uses: actions/setup-java@v4
-        with: { java-version: '17', distribution: 'temurin' }
-      
-      - name: Install & Build
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Install dependencies and build web
         run: |
           npm install --legacy-peer-deps
           npm run build
@@ -18,22 +33,19 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-      
+
       - name: Capacitor Sync
         run: |
-          if [ ! -d "android" ]; then
-            npx cap add android
-          fi
           npx cap sync android
-      
-      - name: Build APK
+
+      - name: Build Release AAB
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
-          
-      - name: Upload APK
+          ./gradlew bundleRelease
+
+      - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
-          name: TaxFlow-Final-APK
-          path: android/app/build/outputs/apk/debug/*.apk
+          name: TaxFlow-Release-AAB
+          path: android/app/build/outputs/bundle/release/*.aab
