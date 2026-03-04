@@ -1,6 +1,6 @@
 {
-	"appId": "com.contabilfacil.planejamento",
-	"appName": "Contábil Fácil",
+	"appId": "com.taxflow.planejamento",
+	"appName": "TaxFlow",
 	"webDir": "dist",
 	"server": {
 		"androidScheme": "https"

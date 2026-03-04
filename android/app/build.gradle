@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.contabilfacil.planejamento"
+    namespace "com.taxflow.planejamento"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.contabilfacil.planejamento"
+        applicationId "com.taxflow.planejamento"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
