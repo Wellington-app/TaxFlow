@@ -1,27 +1,34 @@
 import { GoogleGenAI } from "@google/genai";
 
 async function generateIcon() {
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-  const response = await ai.models.generateContent({
-    model: 'gemini-3.1-flash-image-preview',
-    contents: {
-      parts: [
-        {
-          text: "A professional and modern app icon for a financial and tax planning app called 'TaxFlow'. The icon should feature a clean, minimalist design with a stylized growth chart or a simple geometric representation of a calculator/ledger. Use a professional color palette of deep indigo (#4F46E5) and vibrant emerald (#10B981). The design should be flat, centered on a solid background, with no text. High quality, 1024x1024 resolution.",
-        },
-      ],
-    },
-    config: {
-      imageConfig: {
-        aspectRatio: "1:1",
-        imageSize: "1K"
-      }
-    },
-  });
+  try {
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.1-flash-image-preview',
+      contents: {
+        parts: [
+          {
+            text: "A professional and modern app icon for a financial and tax planning app called 'TaxFlow'. The icon should feature a clean, minimalist design with a stylized growth chart or a simple geometric representation of a calculator/ledger. Use a professional color palette of deep indigo (#4F46E5) and vibrant emerald (#10B981). The design should be flat, centered on a solid background, with no text. High quality, 1024x1024 resolution.",
+          },
+        ],
+      },
+      config: {
+        imageConfig: {
+          aspectRatio: "1:1",
+          imageSize: "1K"
+        }
+      },
+    });
 
-  for (const part of response.candidates[0].content.parts) {
-    if (part.inlineData) {
-      return part.inlineData.data;
+    for (const part of response.candidates[0].content.parts) {
+      if (part.inlineData) {
+        return part.inlineData.data;
+      }
+    }
+  } catch (error: any) {
+    console.error("Icon Generation Error:", error);
+    if (error.message?.includes("429") || error.status === 429) {
+      alert("⚠️ Limite de cota da IA atingido. Não foi possível gerar o ícone agora.");
     }
   }
   return null;

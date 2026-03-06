@@ -45,12 +45,13 @@ import { simulateTaxes } from './services/taxLogic';
 import { getFinancialAdvice, getTaxAlerts } from './services/geminiService';
 import { BusinessData, TaxSimulationResult, Transaction } from './types';
 import { cn } from './lib/utils';
+import { GoogleGenAI } from "@google/genai";
 
 // --- Components ---
 
-const Card = React.forwardRef<HTMLDivElement, { children: React.ReactNode; className?: string }>(
-  ({ children, className }, ref) => (
-    <div ref={ref} className={cn("bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden", className)}>
+const Card = React.forwardRef<HTMLDivElement, { children: React.ReactNode; className?: string; id?: string }>(
+  ({ children, className, id }, ref) => (
+    <div ref={ref} id={id} className={cn("bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden", className)}>
       {children}
     </div>
   )
@@ -62,13 +63,15 @@ const Button = ({
   variant = 'primary', 
   onClick, 
   className,
-  disabled
+  disabled,
+  id
 }: { 
   children: React.ReactNode; 
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost'; 
   onClick?: () => void;
   className?: string;
   disabled?: boolean;
+  id?: string;
 }) => {
   const variants = {
     primary: 'bg-indigo-600 text-white hover:bg-indigo-700',
@@ -79,6 +82,7 @@ const Button = ({
 
   return (
     <button 
+      id={id}
       disabled={disabled}
       onClick={onClick}
       className={cn(
@@ -409,7 +413,7 @@ export default function App() {
   const renderDashboard = () => (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="p-6 bg-indigo-50 border-indigo-100">
+        <Card id="revenue-card" className="p-6 bg-indigo-50 border-indigo-100">
           <div className="flex justify-between items-start">
             <div>
               <p className="text-sm font-medium text-indigo-600 uppercase tracking-wider">Receita Mensal</p>
@@ -425,7 +429,7 @@ export default function App() {
           </div>
         </Card>
 
-        <Card className="p-6 bg-emerald-50 border-emerald-100">
+        <Card id="savings-card" className="p-6 bg-emerald-50 border-emerald-100">
           <div className="flex justify-between items-start">
             <div>
               <p className="text-sm font-medium text-emerald-600 uppercase tracking-wider">Economia Estimada</p>
@@ -440,7 +444,7 @@ export default function App() {
           </div>
         </Card>
 
-        <Card className="p-6 bg-amber-50 border-amber-100">
+        <Card id="deadline-card" className="p-6 bg-amber-50 border-amber-100">
           <div className="flex justify-between items-start">
             <div>
               <p className="text-sm font-medium text-amber-600 uppercase tracking-wider">Próximo Vencimento</p>
@@ -457,7 +461,7 @@ export default function App() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="p-6">
+        <Card id="tax-comparison-chart-card" className="p-6">
           <h4 className="text-lg font-semibold text-slate-900 mb-6">Comparativo de Regimes Tributários</h4>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -479,7 +483,7 @@ export default function App() {
           </div>
         </Card>
 
-        <Card className="p-6">
+        <Card id="smart-alerts-card" className="p-6">
           <h4 className="text-lg font-semibold text-slate-900 mb-4">Alertas Inteligentes</h4>
           <div className="space-y-4">
             {alerts.length > 0 ? (
@@ -511,12 +515,13 @@ export default function App() {
 
   const renderSimulator = () => (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <Card className="p-6 lg:col-span-1 space-y-6">
+      <Card id="business-data-form-card" className="p-6 lg:col-span-1 space-y-6">
         <h3 className="text-xl font-bold text-slate-900">Dados do Negócio</h3>
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Ramo de Atividade</label>
             <select 
+              id="activity-type-select"
               value={businessData.activityType}
               onChange={(e) => setBusinessData({...businessData, activityType: e.target.value as any})}
               className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
@@ -531,6 +536,7 @@ export default function App() {
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Receita Bruta Mensal (R$)</label>
             <input 
+              id="monthly-revenue-input"
               type="number" 
               value={businessData.monthlyRevenue}
               onChange={(e) => setBusinessData({...businessData, monthlyRevenue: Number(e.target.value)})}
@@ -540,6 +546,7 @@ export default function App() {
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Despesas Operacionais (R$)</label>
             <input 
+              id="monthly-expenses-input"
               type="number" 
               value={businessData.monthlyExpenses}
               onChange={(e) => setBusinessData({...businessData, monthlyExpenses: Number(e.target.value)})}
@@ -549,6 +556,7 @@ export default function App() {
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Folha de Pagamento (R$)</label>
             <input 
+              id="employee-costs-input"
               type="number" 
               value={businessData.employeeCosts}
               onChange={(e) => setBusinessData({...businessData, employeeCosts: Number(e.target.value)})}
@@ -558,6 +566,7 @@ export default function App() {
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Alíquota ISS (%)</label>
             <input 
+              id="iss-rate-input"
               type="number" 
               value={businessData.issRate}
               onChange={(e) => setBusinessData({...businessData, issRate: Number(e.target.value)})}
@@ -573,6 +582,7 @@ export default function App() {
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">Aluguel de Máquinas/Equip.</label>
                 <input 
+                  id="machine-rental-input"
                   type="number" 
                   value={businessData.machineRental}
                   onChange={(e) => setBusinessData({...businessData, machineRental: Number(e.target.value)})}
@@ -582,6 +592,7 @@ export default function App() {
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">Gastos com Consumíveis</label>
                 <input 
+                  id="consumables-input"
                   type="number" 
                   value={businessData.consumables}
                   onChange={(e) => setBusinessData({...businessData, consumables: Number(e.target.value)})}
@@ -670,18 +681,18 @@ export default function App() {
       </div>
 
       {loadingAdvice ? (
-        <Card className="p-12 text-center" ref={adviceRef}>
+        <Card id="advice-loading-card" className="p-12 text-center" ref={adviceRef}>
           <div className="animate-spin w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full mx-auto mb-4" />
           <p className="text-slate-600">Consultando especialista IA...</p>
         </Card>
       ) : advice ? (
-        <Card className="p-8 prose prose-slate max-w-none" ref={adviceRef}>
+        <Card id="advice-content-card" className="p-8 prose prose-slate max-w-none" ref={adviceRef}>
           <div className="markdown-body">
             <Markdown>{advice}</Markdown>
           </div>
         </Card>
       ) : (
-        <Card className="p-12 text-center bg-slate-50 border-dashed">
+        <Card id="advice-placeholder-card" className="p-12 text-center bg-slate-50 border-dashed">
           <p className="text-slate-500">Selecione um tópico acima para começar sua jornada de aprendizado.</p>
         </Card>
       )}
@@ -706,9 +717,9 @@ export default function App() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <Card>
+          <Card id="transactions-table-card">
             <div className="overflow-x-auto">
-              <table className="w-full text-left">
+              <table id="transactions-table" className="w-full text-left">
                 <thead>
                   <tr className="border-bottom border-slate-100 text-xs font-bold text-slate-500 uppercase tracking-wider">
                     <th className="px-6 py-4">Data</th>
@@ -742,7 +753,7 @@ export default function App() {
         </div>
 
         <div className="space-y-6">
-          <Card className="p-6">
+          <Card id="expense-distribution-card" className="p-6">
             <h4 className="font-bold text-slate-900 mb-4">Distribuição de Gastos</h4>
             <div className="h-[200px]">
               <ResponsiveContainer width="100%" height="100%">
@@ -778,7 +789,7 @@ export default function App() {
             </div>
           </Card>
 
-          <Card className="p-6 bg-indigo-600 text-white">
+          <Card id="cashflow-tip-card" className="p-6 bg-indigo-600 text-white">
             <h4 className="font-bold mb-2">Dica de Fluxo</h4>
             <p className="text-sm text-indigo-100">
               Você tem R$ 2.800 em gastos com consumíveis este mês. Sabia que no Lucro Real isso poderia reduzir seu imposto em até R$ 952?
@@ -798,11 +809,12 @@ export default function App() {
 
   const [generatingIcon, setGeneratingIcon] = useState(false);
   const [generatedIconUrl, setGeneratedIconUrl] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleGenerateHighResIcon = async () => {
     setGeneratingIcon(true);
+    setErrorMessage(null);
     try {
-      const { GoogleGenAI } = await import("@google/genai");
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
       const response = await ai.models.generateContent({
         model: 'gemini-3.1-flash-image-preview',
@@ -827,20 +839,22 @@ export default function App() {
           break;
         }
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error("Error generating icon", e);
-      alert("Erro ao gerar ícone em alta resolução.");
+      setErrorMessage(e.message?.includes("429") 
+        ? "Limite de cota da IA atingido. Tente novamente em breve." 
+        : "Erro ao gerar ícone em alta resolução.");
     }
     setGeneratingIcon(false);
   };
 
   const renderSettings = () => (
     <div className="max-w-2xl mx-auto space-y-8">
-      <Card className="p-8">
+      <Card id="settings-branding-card" className="p-8">
         <h3 className="text-xl font-bold mb-6">Identidade Visual</h3>
         <div className="flex flex-col md:flex-row gap-8 items-center">
           <div className="w-48 h-48 bg-white rounded-3xl shadow-2xl border border-slate-100 flex items-center justify-center overflow-hidden p-4">
-            <img src="/icon.svg" alt="App Icon" className="w-full h-full object-contain" />
+            <img src="/icon.svg" alt="App Icon" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
           </div>
           <div className="flex-1 space-y-4 text-center md:text-left">
             <div>
@@ -849,29 +863,34 @@ export default function App() {
             </div>
             <div className="flex flex-wrap gap-3 justify-center md:justify-start">
               <a 
+                id="download-svg-btn"
                 href="/icon.svg" 
                 download="taxflow-icon.svg"
                 className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-all flex items-center gap-2"
               >
                 Download SVG
               </a>
-              <Button variant="outline" onClick={handleGenerateHighResIcon} disabled={generatingIcon}>
+              <Button id="generate-hi-res-btn" variant="outline" onClick={handleGenerateHighResIcon} disabled={generatingIcon}>
                 {generatingIcon ? 'Gerando...' : 'Gerar Versão 1024px (PNG)'}
               </Button>
             </div>
+            {errorMessage && (
+              <p className="text-rose-600 text-xs font-medium mt-2">{errorMessage}</p>
+            )}
           </div>
         </div>
       </Card>
 
       {generatedIconUrl && (
-        <Card className="p-8 border-indigo-200 bg-indigo-50/30">
+        <Card id="generated-icon-card" className="p-8 border-indigo-200 bg-indigo-50/30">
           <h3 className="text-xl font-bold mb-4 text-indigo-900">Versão em Alta Resolução (1024x1024)</h3>
           <p className="text-sm text-indigo-700 mb-6">Aqui está uma versão gerada por IA em alta definição para você tirar seu print ou salvar.</p>
           <div className="flex flex-col items-center gap-6">
             <div className="w-64 h-64 rounded-[48px] shadow-2xl overflow-hidden border-4 border-white">
-              <img src={generatedIconUrl} alt="Generated High Res Icon" className="w-full h-full object-cover" />
+              <img src={generatedIconUrl} alt="Generated High Res Icon" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
             </div>
             <a 
+              id="download-png-btn"
               href={generatedIconUrl} 
               download="taxflow-high-res.png"
               className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all"
@@ -882,7 +901,7 @@ export default function App() {
         </Card>
       )}
 
-      <Card className="p-8">
+      <Card id="system-info-card" className="p-8">
         <h3 className="text-xl font-bold mb-4">Informações do Sistema</h3>
         <div className="space-y-4">
           <div className="flex justify-between py-3 border-b border-slate-100">
