@@ -45,7 +45,6 @@ import { simulateTaxes } from './services/taxLogic';
 import { getFinancialAdvice, getTaxAlerts } from './services/geminiService';
 import { BusinessData, TaxSimulationResult, Transaction } from './types';
 import { cn } from './lib/utils';
-import { GoogleGenAI } from "@google/genai";
 
 // --- Components ---
 
@@ -807,136 +806,6 @@ export default function App() {
     </div>
   );
 
-  const [generatingIcon, setGeneratingIcon] = useState(false);
-  const [generatedIconUrl, setGeneratedIconUrl] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  const handleGenerateHighResIcon = async () => {
-    setGeneratingIcon(true);
-    setErrorMessage(null);
-    try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.1-flash-image-preview',
-        contents: {
-          parts: [
-            {
-              text: "A professional and modern app icon for a financial and tax planning app called 'TaxFlow'. The icon should feature a clean, minimalist design with a stylized growth chart or a simple geometric representation of a calculator/ledger. Use a professional color palette of deep indigo (#4F46E5) and vibrant emerald (#10B981). The design should be flat, centered on a solid background, with no text. High quality, 1024x1024 resolution, centered, app icon style.",
-            },
-          ],
-        },
-        config: {
-          imageConfig: {
-            aspectRatio: "1:1",
-            imageSize: "1K"
-          }
-        },
-      });
-
-      for (const part of response.candidates[0].content.parts) {
-        if (part.inlineData) {
-          setGeneratedIconUrl(`data:image/png;base64,${part.inlineData.data}`);
-          break;
-        }
-      }
-    } catch (e: any) {
-      console.error("Error generating icon", e);
-      setErrorMessage(e.message?.includes("429") 
-        ? "Limite de cota da IA atingido. Tente novamente em breve." 
-        : "Erro ao gerar ícone em alta resolução.");
-    }
-    setGeneratingIcon(false);
-  };
-
-  const renderSettings = () => (
-    <div className="max-w-2xl mx-auto space-y-8">
-      <Card id="settings-branding-card" className="p-8">
-        <h3 className="text-xl font-bold mb-6">Identidade Visual</h3>
-        <div className="flex flex-col md:flex-row gap-8 items-center">
-          <div className="w-48 h-48 bg-white rounded-3xl shadow-2xl border border-slate-100 flex items-center justify-center overflow-hidden p-4">
-            <img src="/icon.svg" alt="App Icon" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
-          </div>
-          <div className="flex-1 space-y-4 text-center md:text-left">
-            <div>
-              <h4 className="font-bold text-slate-900">Ícone do Aplicativo (SVG)</h4>
-              <p className="text-sm text-slate-500">Este é o ícone vetorial oficial. Ideal para uso em qualquer tamanho sem perder qualidade.</p>
-            </div>
-            <div className="flex flex-wrap gap-3 justify-center md:justify-start">
-              <a 
-                id="download-svg-btn"
-                href="/icon.svg" 
-                download="taxflow-icon.svg"
-                className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-all flex items-center gap-2"
-              >
-                Download SVG
-              </a>
-              <Button id="generate-hi-res-btn" variant="outline" onClick={handleGenerateHighResIcon} disabled={generatingIcon}>
-                {generatingIcon ? 'Gerando...' : 'Gerar Versão 1024px (PNG)'}
-              </Button>
-            </div>
-            {errorMessage && (
-              <p className="text-rose-600 text-xs font-medium mt-2">{errorMessage}</p>
-            )}
-          </div>
-        </div>
-      </Card>
-
-      {generatedIconUrl && (
-        <Card id="generated-icon-card" className="p-8 border-indigo-200 bg-indigo-50/30">
-          <h3 className="text-xl font-bold mb-4 text-indigo-900">Versão em Alta Resolução (1024x1024)</h3>
-          <p className="text-sm text-indigo-700 mb-6">Aqui está uma versão gerada por IA em alta definição para você tirar seu print ou salvar.</p>
-          <div className="flex flex-col items-center gap-6">
-            <div className="w-64 h-64 rounded-[48px] shadow-2xl overflow-hidden border-4 border-white">
-              <img src={generatedIconUrl} alt="Generated High Res Icon" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-            </div>
-            <a 
-              id="download-png-btn"
-              href={generatedIconUrl} 
-              download="taxflow-high-res.png"
-              className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all"
-            >
-              Baixar PNG em Alta Resolução
-            </a>
-          </div>
-        </Card>
-      )}
-
-      <Card id="system-info-card" className="p-8">
-        <h3 className="text-xl font-bold mb-4">Informações do Sistema</h3>
-        <div className="space-y-4">
-          <div className="flex justify-between py-3 border-b border-slate-100">
-            <span className="text-slate-500">Nome do App</span>
-            <span className="font-bold">TaxFlow</span>
-          </div>
-          <div className="flex justify-between py-3 border-b border-slate-100">
-            <span className="text-slate-500">Versão</span>
-            <span className="font-bold">1.0.0 (Beta)</span>
-          </div>
-          <div className="flex justify-between py-3 border-b border-slate-100">
-            <span className="text-slate-500">Links Legais</span>
-            <div className="flex gap-3">
-              <a href="/privacy.html" target="_blank" className="text-indigo-600 hover:underline text-sm font-medium">Privacidade</a>
-              <a href="/delete-account.html" target="_blank" className="text-indigo-600 hover:underline text-sm font-medium">Excluir Dados</a>
-            </div>
-          </div>
-          <div className="flex justify-between py-3">
-            <span className="text-slate-500">Ambiente</span>
-            <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-xs font-bold uppercase">Produção</span>
-          </div>
-        </div>
-      </Card>
-
-      <div className="flex justify-center">
-        <button 
-          onClick={() => supabase.auth.signOut()}
-          className="text-rose-600 font-bold hover:underline"
-        >
-          Sair da Conta
-        </button>
-      </div>
-    </div>
-  );
-
   if (!session) {
     return <Auth />;
   }
@@ -959,7 +828,6 @@ export default function App() {
             { id: 'cashflow', icon: Wallet, label: 'Fluxo de Caixa' },
             { id: 'education', icon: BookOpen, label: 'Educação' },
             { id: 'alerts', icon: Bell, label: 'Alertas' },
-            { id: 'settings', icon: Info, label: 'Configurações' },
           ].map((item) => (
             <button
               key={item.id}
@@ -996,7 +864,6 @@ export default function App() {
           { id: 'cashflow', icon: Wallet },
           { id: 'education', icon: BookOpen },
           { id: 'alerts', icon: Bell },
-          { id: 'settings', icon: Info },
         ].map((item) => (
           <button
             key={item.id}
@@ -1021,7 +888,6 @@ export default function App() {
               {activeTab === 'education' && 'Central de Conhecimento'}
               {activeTab === 'cashflow' && 'Gestão de Fluxo de Caixa'}
               {activeTab === 'alerts' && 'Alertas e Oportunidades'}
-              {activeTab === 'settings' && 'Configurações da Marca'}
             </h2>
             <p className="text-slate-500 text-sm">Hoje é {new Date().toLocaleDateString('pt-BR')}</p>
           </div>
@@ -1058,7 +924,6 @@ export default function App() {
             {activeTab === 'simulator' && renderSimulator()}
             {activeTab === 'education' && renderEducation()}
             {activeTab === 'cashflow' && renderCashflow()}
-            {activeTab === 'settings' && renderSettings()}
             {activeTab === 'alerts' && (
               <div className="max-w-3xl mx-auto">
                 <h3 className="text-xl font-bold mb-6">Alertas do Sistema</h3>

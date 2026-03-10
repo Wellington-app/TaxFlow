@@ -9,7 +9,7 @@ export default defineConfig(({mode}) => {
     plugins: [react(), tailwindcss()],
     base: './',
     define: {
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.TaxFloww || env.GEMINI_API_KEY || ''),
+      // API keys are now handled server-side for security
     },
     resolve: {
       alias: {

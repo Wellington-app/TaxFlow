@@ -1,40 +1,40 @@
-import { GoogleGenAI } from "@google/genai";
 import { Transaction } from '../types';
-
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 export const getFinancialAdvice = async (query: string) => {
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: query,
-      config: {
-        systemInstruction: "Você é um consultor financeiro e tributário especializado em pequenos negócios no Brasil. Forneça explicações simples, educativas e acionáveis. Use markdown para formatar a resposta.",
-      },
+    const response = await fetch("/api/gemini/advice", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query }),
     });
-    return response.text;
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "API Error");
+    }
+    
+    const data = await response.json();
+    return data.text;
   } catch (error: any) {
-    console.error("Gemini API Error:", error);
-    if (error.message?.includes("429") || error.status === 429) {
-      return "⚠️ Limite de cota da IA atingido. Por favor, tente novamente em alguns minutos ou verifique seu plano no Google AI Studio (ai.google.dev).";
+    console.error("Gemini API Error (Advice):", error);
+    if (error.message?.includes("429")) {
+      return "⚠️ Limite de cota da IA atingido. Por favor, tente novamente em alguns minutos.";
     }
     return "Ocorreu um erro ao consultar a IA. Por favor, tente novamente mais tarde.";
   }
 };
 
 export const getTaxAlerts = async (transactions: Transaction[], taxRegime: string) => {
-  const prompt = `Com base nessas transações: ${JSON.stringify(transactions)} e no regime tributário ${taxRegime}, identifique oportunidades de dedução fiscal (especialmente para Lucro Presumido como aluguel de máquinas e consumíveis) e alertas de vencimento. Retorne um JSON com uma lista de alertas, cada um com 'title', 'description' e 'type' (warning, info, success).`;
-  
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-      },
+    const response = await fetch("/api/gemini/alerts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ transactions, taxRegime }),
     });
     
-    return JSON.parse(response.text || "[]");
+    if (!response.ok) return [];
+    
+    return await response.json();
   } catch (error: any) {
     console.error("Gemini API Error (Alerts):", error);
     return [];
